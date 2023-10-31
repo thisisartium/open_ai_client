@@ -8,7 +8,7 @@ defmodule OpenAiClientTest do
     {:ok, bypass: bypass}
   end
 
-  defp enpoint_url(bypass) do
+  defp endpoint_url(bypass) do
     "http://localhost:#{bypass.port}"
   end
 
@@ -24,7 +24,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, response} =
-        OpenAiClient.post("/foo", json: %{foo: "foo"}, base_url: enpoint_url(bypass))
+        OpenAiClient.post("/foo", json: %{foo: "foo"}, base_url: endpoint_url(bypass))
 
       assert response.status == 201
       assert response.body == %{"bar" => "bar"}
@@ -42,7 +42,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, _response} =
-        OpenAiClient.post("/foo", base_url: enpoint_url(bypass))
+        OpenAiClient.post("/foo", base_url: endpoint_url(bypass))
     end
 
     test "adds the openai_organization_id as a request header when it is a string", %{
@@ -58,7 +58,7 @@ defmodule OpenAiClientTest do
 
       {:ok, _response} =
         OpenAiClient.post("/foo",
-          base_url: enpoint_url(bypass),
+          base_url: endpoint_url(bypass),
           openai_organization: organization_id
         )
     end
@@ -72,7 +72,7 @@ defmodule OpenAiClientTest do
         Plug.Conn.resp(conn, 201, "")
       end)
 
-      {:ok, _response} = OpenAiClient.post("/foo", base_url: enpoint_url(bypass))
+      {:ok, _response} = OpenAiClient.post("/foo", base_url: endpoint_url(bypass))
     end
   end
 
@@ -85,7 +85,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, response} =
-        OpenAiClient.get("/foo", base_url: enpoint_url(bypass))
+        OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
 
       assert response.status == 200
       assert response.body == %{"bar" => "bar"}
@@ -103,7 +103,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, _response} =
-        OpenAiClient.get("/foo", base_url: enpoint_url(bypass))
+        OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
     end
 
     test "adds the openai_organization_id as a request header when it is a string", %{
@@ -119,7 +119,7 @@ defmodule OpenAiClientTest do
 
       {:ok, _response} =
         OpenAiClient.get("/foo",
-          base_url: enpoint_url(bypass),
+          base_url: endpoint_url(bypass),
           openai_organization: organization_id
         )
     end
@@ -133,7 +133,7 @@ defmodule OpenAiClientTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
-      {:ok, _response} = OpenAiClient.get("/foo", base_url: enpoint_url(bypass))
+      {:ok, _response} = OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
     end
   end
 end
