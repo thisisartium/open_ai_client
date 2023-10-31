@@ -74,6 +74,29 @@ defmodule OpenAiClientTest do
 
       {:ok, _response} = OpenAiClient.post("/foo", base_url: endpoint_url(bypass))
     end
+
+    test "retries the request on a 408, 429, 500, 502, 503, or 504 http status response", %{
+      bypass: bypass
+    } do
+      retry_statuses = [408, 429, 500, 502, 503, 504]
+      {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :retry_counter)
+
+      Enum.each(retry_statuses, fn status ->
+        Bypass.expect(bypass, "POST", "/foo", fn conn ->
+          Agent.update(:retry_counter, &(&1 + 1))
+          Plug.Conn.resp(conn, status, "")
+        end)
+
+        assert {:ok, %{status: ^status}} =
+                 OpenAiClient.post("/foo",
+                   base_url: endpoint_url(bypass),
+                   retry_delay: 0,
+                   retry_log_level: false
+                 )
+
+        assert Agent.get_and_update(:retry_counter, fn value -> {value, 0} end) == 4
+      end)
+    end
   end
 
   describe "get/2" do
@@ -134,6 +157,29 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, _response} = OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
+    end
+
+    test "retries the request on a 408, 429, 500, 502, 503, or 504 http status response", %{
+      bypass: bypass
+    } do
+      retry_statuses = [408, 429, 500, 502, 503, 504]
+      {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :retry_counter)
+
+      Enum.each(retry_statuses, fn status ->
+        Bypass.expect(bypass, "GET", "/foo", fn conn ->
+          Agent.update(:retry_counter, &(&1 + 1))
+          Plug.Conn.resp(conn, status, "")
+        end)
+
+        assert {:ok, %{status: ^status}} =
+                 OpenAiClient.get("/foo",
+                   base_url: endpoint_url(bypass),
+                   retry_delay: 0,
+                   retry_log_level: false
+                 )
+
+        assert Agent.get_and_update(:retry_counter, fn value -> {value, 0} end) == 4
+      end)
     end
   end
 end
