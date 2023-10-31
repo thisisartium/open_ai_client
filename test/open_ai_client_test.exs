@@ -3,8 +3,18 @@ defmodule OpenAiClientTest do
 
   use ExUnit.Case, async: true
 
+  defmodule MockBreaker do
+    @moduledoc false
+
+    def call(function, args, opts) do
+      send(self(), {:mock_breaker_called, function, args, opts})
+      apply(function, args)
+    end
+  end
+
   setup do
     bypass = Bypass.open()
+
     {:ok, bypass: bypass}
   end
 
@@ -13,7 +23,9 @@ defmodule OpenAiClientTest do
   end
 
   describe "post/2" do
-    test "makes a post request to /foo with JSON request and response bodies", %{bypass: bypass} do
+    test "makes a post request to /foo with JSON request and response bodies", %{
+      bypass: bypass
+    } do
       Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         assert body == Jason.encode!(%{foo: "foo"})
@@ -24,7 +36,11 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, response} =
-        OpenAiClient.post("/foo", json: %{foo: "foo"}, base_url: endpoint_url(bypass))
+        OpenAiClient.post("/foo",
+          json: %{foo: "foo"},
+          base_url: endpoint_url(bypass),
+          breaker: MockBreaker
+        )
 
       assert response.status == 201
       assert response.body == %{"bar" => "bar"}
@@ -42,7 +58,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, _response} =
-        OpenAiClient.post("/foo", base_url: endpoint_url(bypass))
+        OpenAiClient.post("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
     end
 
     test "adds the openai_organization_id as a request header when it is a string", %{
@@ -59,7 +75,8 @@ defmodule OpenAiClientTest do
       {:ok, _response} =
         OpenAiClient.post("/foo",
           base_url: endpoint_url(bypass),
-          openai_organization: organization_id
+          openai_organization: organization_id,
+          breaker: MockBreaker
         )
     end
 
@@ -72,7 +89,8 @@ defmodule OpenAiClientTest do
         Plug.Conn.resp(conn, 201, "")
       end)
 
-      {:ok, _response} = OpenAiClient.post("/foo", base_url: endpoint_url(bypass))
+      {:ok, _response} =
+        OpenAiClient.post("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
     end
 
     test "retries the request on a 408, 429, 500, 502, 503, or 504 http status response", %{
@@ -91,16 +109,41 @@ defmodule OpenAiClientTest do
                  OpenAiClient.post("/foo",
                    base_url: endpoint_url(bypass),
                    retry_delay: 0,
-                   retry_log_level: false
+                   retry_log_level: false,
+                   breaker: MockBreaker
                  )
 
         assert Agent.get_and_update(:retry_counter, fn value -> {value, 0} end) == 4
       end)
     end
+
+    test "MockBreaker is called with the expected arguments", %{
+      bypass: bypass
+    } do
+      Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
+        Plug.Conn.resp(conn, 201, "")
+      end)
+
+      {:ok, _response} =
+        OpenAiClient.post("/foo",
+          base_url: endpoint_url(bypass),
+          breaker: MockBreaker
+        )
+
+      expected_function = &OpenAiClient.__do_request__/3
+      expected_args = [:post, "/foo", [base_url: endpoint_url(bypass)]]
+
+      assert_receive {:mock_breaker_called, ^expected_function, ^expected_args, breaker_opts}
+      assert breaker_opts[:threshold] == 10
+      assert breaker_opts[:timeout_sec] == 120
+      assert is_function(breaker_opts[:match_return], 1)
+    end
   end
 
   describe "get/2" do
-    test "makes a get request to /foo with JSON response body", %{bypass: bypass} do
+    test "makes a get request to /foo with JSON response body", %{
+      bypass: bypass
+    } do
       Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
         conn
         |> Plug.Conn.put_resp_header("content-type", "application/json")
@@ -108,7 +151,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, response} =
-        OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
+        OpenAiClient.get("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
 
       assert response.status == 200
       assert response.body == %{"bar" => "bar"}
@@ -126,7 +169,7 @@ defmodule OpenAiClientTest do
       end)
 
       {:ok, _response} =
-        OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
+        OpenAiClient.get("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
     end
 
     test "adds the openai_organization_id as a request header when it is a string", %{
@@ -143,7 +186,8 @@ defmodule OpenAiClientTest do
       {:ok, _response} =
         OpenAiClient.get("/foo",
           base_url: endpoint_url(bypass),
-          openai_organization: organization_id
+          openai_organization: organization_id,
+          breaker: MockBreaker
         )
     end
 
@@ -156,7 +200,8 @@ defmodule OpenAiClientTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
-      {:ok, _response} = OpenAiClient.get("/foo", base_url: endpoint_url(bypass))
+      {:ok, _response} =
+        OpenAiClient.get("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
     end
 
     test "retries the request on a 408, 429, 500, 502, 503, or 504 http status response", %{
@@ -175,11 +220,34 @@ defmodule OpenAiClientTest do
                  OpenAiClient.get("/foo",
                    base_url: endpoint_url(bypass),
                    retry_delay: 0,
-                   retry_log_level: false
+                   retry_log_level: false,
+                   breaker: MockBreaker
                  )
 
         assert Agent.get_and_update(:retry_counter, fn value -> {value, 0} end) == 4
       end)
+    end
+
+    test "MockBreaker is called with the expected arguments", %{
+      bypass: bypass
+    } do
+      Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
+        Plug.Conn.resp(conn, 200, "")
+      end)
+
+      {:ok, _response} =
+        OpenAiClient.get("/foo",
+          base_url: endpoint_url(bypass),
+          breaker: MockBreaker
+        )
+
+      expected_function = &OpenAiClient.__do_request__/3
+      expected_args = [:get, "/foo", [base_url: endpoint_url(bypass)]]
+
+      assert_receive {:mock_breaker_called, ^expected_function, ^expected_args, breaker_opts}
+      assert breaker_opts[:threshold] == 10
+      assert breaker_opts[:timeout_sec] == 120
+      assert is_function(breaker_opts[:match_return], 1)
     end
   end
 end
