@@ -19,10 +19,15 @@ end
 
 ## Configuration
 
-In your `config/runtime.exs` file, you need to set up the OpenAI API key:
+In your `config/runtime.exs` file, you need to set up the OpenAI API key and organization ID:
 
 ```elixir
-config :open_ai_client, OpenAiClient, openai_api_key: System.get_env("OPENAI_API_KEY")
+import Config
+
+config :open_ai_client, OpenAiClient,
+  base_url: System.get_env("OPENAI_BASE_URL") || "https://api.openai.com/v1",
+  openai_api_key: System.get_env("OPENAI_API_KEY") || raise("OPENAI_API_KEY is not set"),
+  openai_organization_id: System.get_env("OPENAI_ORGANIZATION_ID")
 ```
 
 ## Usage
