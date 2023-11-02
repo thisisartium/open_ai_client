@@ -42,10 +42,12 @@ jobs:
         git config --local user.name "GitHub Action"
         git commit -m "Update version in mix.exs to $VERSION" -a
     - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: main
+      run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git diff --quiet || git push origin HEAD:main
     - name: Delete existing tag
       run: |
         VERSION=${{ github.ref }}
