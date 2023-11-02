@@ -36,6 +36,8 @@ jobs:
         sed -i "s/version: \".*\"/version: \"$VERSION\"/" mix.exs
     - name: Commit changes
       run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "Update version in mix.exs to $VERSION" -a
@@ -45,11 +47,20 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: main
     - name: Delete existing tag
-      run: git tag -d v$VERSION || true
+      run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
+        git tag -d v$VERSION || true
     - name: Push tag deletion
-      run: git push origin :refs/tags/v$VERSION || true
+      run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
+        git push origin :refs/tags/v$VERSION || true
     - name: Tag the new commit
-      run: git tag v$VERSION HEAD
+      run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
+        git tag v$VERSION HEAD
     - name: Push tags
       run: git push --tags
     - name: Publish to Hex
