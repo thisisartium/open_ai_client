@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# # Set options for error handling and debugging
+# set -euo pipefail
+# IFS=$'\n\t'
+
+# Check if there are any uncommitted changes
+if [[ -n $(git status -s) ]]; then
+  echo "There are uncommitted changes. Aborting."
+  exit 1
+fi
+
+# Check if we are on the main branch
+if [[ $(git branch --show-current) != "main" ]]; then
+  echo "Not on the main branch. Aborting."
+  exit 1
+fi
+
+# Check if the version number matches the expected SEMVER format
+if [[ ! $1 =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Invalid version number format. Aborting."
+  exit 1
+fi
+
+# Get the current version number from mix.exs
+current_version=$(grep -oE "\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"" mix.exs | cut -d'"' -f4)
+
+# Compare the current version with the provided version
+if [[ $1 != $(echo -e "$current_version\n$1" | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1) ]]; then
+  echo "The provided version number is not higher than the current version. Aborting."
+  exit 1
+fi
+
+# Update the version number in mix.exs
+sed -i "s/\"version\": \".*\"/\"version\": \"$1\"/" mix.exs
+
+# Commit the change and push to GitHub
+git add mix.exs
+git commit -m "Update version number to $1"
+git push origin main
+
+# Tag the repository with the version number
+git tag "v$1"
+git push origin "v$1"
+
+# Run mix hex.publish
+mix hex.publish
+
+# Create a new release on GitHub associated with the tag
+gh release create "v$1" --title "Version $1" --notes "Release notes for version $1" --publish
