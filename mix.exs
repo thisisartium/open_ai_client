@@ -22,7 +22,7 @@ defmodule OpenAiClient.MixProject do
         licenses: ["MIT"],
         links: %{
           "GitHub" => "https://github.com/fractaltechnologylabs/open_ai_client",
-          "Documentation" => "https://hexdocs.pm/open_ai_client",
+          "Documentation" => "https://artium.hexdocs.pm/open_ai_client",
           "Artium" => "https://thisisartium.com"
         }
       ]
