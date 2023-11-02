@@ -43,13 +43,13 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref }}
+        branch: main
     - name: Delete existing tag
       run: git tag -d v$VERSION || true
     - name: Push tag deletion
       run: git push origin :refs/tags/v$VERSION || true
-    - name: Tag the commit
-      run: git tag v$VERSION
+    - name: Tag the new commit
+      run: git tag v$VERSION HEAD
     - name: Push tags
       run: git push --tags
     - name: Publish to Hex
