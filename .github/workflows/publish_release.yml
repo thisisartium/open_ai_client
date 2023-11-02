@@ -1,0 +1,58 @@
+name: Publish Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Elixir
+      uses: actions/setup-elixir@v1
+      with:
+        elixir-version: 1.15
+        otp-version: 24.0
+
+    - name: Install Dependencies
+      run: mix deps.get
+
+    - name: Update version in mix.exs
+      run: |
+        VERSION=${{ github.ref }}
+        VERSION=${VERSION#refs/tags/v}
+        sed -i "s/version: \".*\"/version: \"$VERSION\"/" mix.exs
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Update version in mix.exs to $VERSION" -a
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+
+    - name: Delete existing tag
+      run: git tag -d v$VERSION || true
+
+    - name: Push tag deletion
+      run: git push origin :refs/tags/v$VERSION || true
+
+    - name: Tag the commit
+      run: git tag v$VERSION
+
+    - name: Push tags
+      run: git push --tags
+
+    - name: Publish to Hex
+      run: |
+        mix hex.publish --yes
+      env:
+        HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
