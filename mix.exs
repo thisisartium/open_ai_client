@@ -18,11 +18,10 @@ defmodule OpenAiClient.MixProject do
       source_url: "https://github.com/fractaltechnologylabs/open_ai_client",
       homepage_url: "https://thisisartium.com",
       package: [
-        organization: "artium",
         licenses: ["MIT"],
         links: %{
           "GitHub" => "https://github.com/fractaltechnologylabs/open_ai_client",
-          "Documentation" => "https://artium.hexdocs.pm/open_ai_client",
+          "Documentation" => "https://hexdocs.pm/open_ai_client",
           "Artium" => "https://thisisartium.com"
         }
       ]

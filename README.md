@@ -12,7 +12,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:open_ai_client, "~> 0.1.0", organization: "artium"}
+    {:open_ai_client, "~> 0.1"}
   ]
 end
 ```
