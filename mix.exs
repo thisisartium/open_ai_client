@@ -4,6 +4,7 @@ defmodule OpenAiClient.MixProject do
   def project do
     [
       app: :open_ai_client,
+      description: "OpenAI API client for Elixir",
       version: "1.0.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
@@ -13,6 +14,17 @@ defmodule OpenAiClient.MixProject do
       docs: [
         main: "OpenAiClient",
         extras: ["README.md"]
+      ],
+      source_url: "https://github.com/fractaltechnologylabs/open_ai_client",
+      homepage_url: "https://thisisartium.com",
+      package: [
+        organization: "artium",
+        licenses: ["MIT"],
+        links: %{
+          "GitHub" => "https://github.com/fractaltechnologylabs/open_ai_client",
+          "Documentation" => "https://hexdocs.pm/open_ai_client",
+          "Artium" => "https://thisisartium.com"
+        }
       ]
     ]
   end
