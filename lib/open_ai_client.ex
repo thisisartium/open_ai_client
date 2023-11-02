@@ -78,6 +78,7 @@ defmodule OpenAiClient do
       :method,
       retry_delay: nil,
       retry_log_level: nil,
+      into: nil,
       retry: :transient,
       openai_organization: default_organization(),
       base_url: default_base_url(),
