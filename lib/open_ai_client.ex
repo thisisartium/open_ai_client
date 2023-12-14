@@ -80,6 +80,7 @@ defmodule OpenAiClient do
       retry_log_level: nil,
       into: nil,
       retry: :transient,
+      receive_timeout: nil,
       openai_organization: default_organization(),
       base_url: default_base_url(),
       auth: {:bearer, default_api_key()}
