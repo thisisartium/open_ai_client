@@ -61,6 +61,22 @@ defmodule OpenAiClientTest do
         OpenAiClient.post("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
     end
 
+    test "adds the openai-beta request header", %{
+      bypass: bypass
+    } do
+      Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
+        assert {"openai-beta", "assistants=v1"} in conn.req_headers
+
+        Plug.Conn.resp(conn, 201, "")
+      end)
+
+      {:ok, _response} =
+        OpenAiClient.post("/foo",
+          base_url: endpoint_url(bypass),
+          breaker: MockBreaker
+        )
+    end
+
     test "adds the openai_organization_id as a request header when it is a string", %{
       bypass: bypass
     } do

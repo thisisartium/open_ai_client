@@ -7,6 +7,8 @@ defmodule OpenAiClient do
   - :openai_organization - the OpenAI organization ID
   """
 
+  import Req.Request, only: [put_new_header: 3]
+
   @doc """
   Sends a POST request to the OpenAI API.
 
@@ -63,12 +65,15 @@ defmodule OpenAiClient do
   end
 
   defp build_request(url, options) do
+    openai_organization = options[:openai_organization] || default_organization()
+    options = Keyword.delete(options, :openai_organization)
+
     options
     |> Keyword.put(:url, url)
     |> validate_options()
-    |> set_headers()
     |> remove_nil_values()
     |> Req.new()
+    |> set_headers(openai_organization: openai_organization)
   end
 
   defp validate_options(options) do
@@ -81,7 +86,6 @@ defmodule OpenAiClient do
       into: nil,
       retry: :transient,
       receive_timeout: nil,
-      openai_organization: default_organization(),
       base_url: default_base_url(),
       auth: {:bearer, default_api_key()}
     ])
@@ -103,14 +107,13 @@ defmodule OpenAiClient do
     Application.get_env(:open_ai_client, OpenAiClient)[:openai_organization_id]
   end
 
-  defp set_headers(options) do
-    headers =
-      if options[:openai_organization],
-        do: [{"openai-organization", options[:openai_organization]}],
-        else: []
-
-    options
-    |> Keyword.put_new(:headers, headers)
-    |> Keyword.delete(:openai_organization)
+  defp set_headers(%Req.Request{} = req, options) when is_list(options) do
+    req
+    |> put_new_header("openai-beta", "assistants=v1")
+    |> then(
+      &if options[:openai_organization],
+        do: put_new_header(&1, "openai-organization", options[:openai_organization]),
+        else: &1
+    )
   end
 end
