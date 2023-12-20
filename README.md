@@ -12,7 +12,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:open_ai_client, "~> 0.1"}
+    {:open_ai_client, "~> 2.0"}
   ]
 end
 ```
@@ -24,10 +24,9 @@ In your `config/runtime.exs` file, you need to set up the OpenAI API key and org
 ```elixir
 import Config
 
-config :open_ai_client, OpenAiClient,
-  base_url: System.get_env("OPENAI_BASE_URL") || "https://api.openai.com/v1",
-  openai_api_key: System.get_env("OPENAI_API_KEY") || raise("OPENAI_API_KEY is not set"),
-  openai_organization_id: System.get_env("OPENAI_ORGANIZATION_ID")
+config :open_ai_client, :base_url, System.get_env("OPENAI_BASE_URL") || "https://api.openai.com/v1",
+config :open_ai_client, :openai_api_key, System.get_env("OPENAI_API_KEY") || raise("OPENAI_API_KEY is not set"),
+config :open_ai_client, :openai_organization_id, System.get_env("OPENAI_ORGANIZATION_ID")
 ```
 
 ## Usage
@@ -35,17 +34,26 @@ config :open_ai_client, OpenAiClient,
 You can send a POST request to the OpenAI API like this:
 
 ```elixir
-OpenAiClient.post("https://api.openai.com/v1/chat/completions", [json: %{model: "gpt-3.5-turbo", messages: [%{role: "system", content: "You are a helpful assistant."}, %{role: "user", content: "Who won the world series in 2020?"}]}])
+{:ok, %Req.Response{} = response} = OpenAiClient.post(
+  "/chat/completions", json: %{
+    model: "gpt-3.5-turbo",
+    messages: [
+      %{role: "system", content: "You are a helpful assistant."},
+      %{role: "user", content: "Who won the world series in 2020?"}
+    ]
+  }
+)
 ```
 
 And a GET request like this:
 
 ```elixir
-OpenAiClient.get("https://api.openai.com/v1/models")
+{:ok, %Req.Response{} = response} = OpenAiClient.get("/models")
 ```
 
-Documentation can be generated with
-[ExDoc](https://github.com/elixir-lang/ex_doc) and published on
-[HexDocs](https://hexdocs.pm). Once published, the docs can be found at
-<https://hexdocs.pm/open_ai_client>.
+Because this is really just a simple wrapper around the `Req` library, see the
+[Req library documentation](https://hexdocs.pm/req) for details on the
+`Req.Response` module returned by these calls.
 
+Find the published documentation for the latest version at:
+https://hexdocs.pm/open_ai_client.
