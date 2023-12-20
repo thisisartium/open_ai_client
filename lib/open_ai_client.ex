@@ -20,7 +20,7 @@ defmodule OpenAiClient do
 
   """
   @spec post(String.t(), Keyword.t()) :: {:ok, map()} | {:error, any()}
-  def post(url, options) do
+  def post(url, options \\ []) do
     send_request(:post, url, options)
   end
 
@@ -34,7 +34,7 @@ defmodule OpenAiClient do
 
   """
   @spec get(String.t(), Keyword.t()) :: {:ok, map()} | {:error, any()}
-  def get(url, options) do
+  def get(url, options \\ []) do
     send_request(:get, url, options)
   end
 
