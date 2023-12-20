@@ -96,15 +96,15 @@ defmodule OpenAiClient do
   end
 
   defp default_base_url do
-    Application.get_env(:open_ai_client, OpenAiClient)[:base_url]
+    Application.get_env(:open_ai_client, :base_url)
   end
 
   defp default_api_key do
-    Application.get_env(:open_ai_client, OpenAiClient)[:openai_api_key]
+    Application.get_env(:open_ai_client, :openai_api_key)
   end
 
   defp default_organization do
-    Application.get_env(:open_ai_client, OpenAiClient)[:openai_organization_id]
+    Application.get_env(:open_ai_client, :openai_organization_id)
   end
 
   defp set_headers(%Req.Request{} = req, options) when is_list(options) do

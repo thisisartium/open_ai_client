@@ -49,7 +49,7 @@ defmodule OpenAiClientTest do
     test "adds the openai api key as a bearer token in the authorization header", %{
       bypass: bypass
     } do
-      api_key = Application.get_env(:open_ai_client, OpenAiClient)[:openai_api_key]
+      api_key = Application.get_env(:open_ai_client, :openai_api_key)
 
       Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
         assert {"authorization", "Bearer #{api_key}"} in conn.req_headers
@@ -176,7 +176,7 @@ defmodule OpenAiClientTest do
     test "adds the openai api key as a bearer token in the authorization header", %{
       bypass: bypass
     } do
-      api_key = Application.get_env(:open_ai_client, OpenAiClient)[:openai_api_key]
+      api_key = Application.get_env(:open_ai_client, :openai_api_key)
 
       Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
         assert {"authorization", "Bearer #{api_key}"} in conn.req_headers
