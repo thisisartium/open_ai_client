@@ -1,25 +1,14 @@
-name: Elixir CI
-
+name: Publish Package
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  merge_group:
-    types: [checks_requested]
-
-permissions:
-  contents: read
+  release:
+    types: [published]
 
 env:
   OPENAI_API_KEY: afakekeyneededfortests
 
 jobs:
-  build:
-
-    name: Build and test
+  publish:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Elixir
@@ -41,7 +30,17 @@ jobs:
         restore-keys: ${{ runner.os }}-build-
     - name: Install dependencies
       run: mix deps.get
-    - name: Run tests
-      run: mix test
-    - name: Run Quality Checks
-      run: mix check
+    - name: Check version
+      run: |
+        MIX_VERSION=$(grep 'version:' mix.exs | cut -d '"' -f2)
+        TAG_VERSION=${GITHUB_REF/refs\/tags\/v/}
+        if [ "$MIX_VERSION" != "$TAG_VERSION" ]; then
+          echo "Tag version ($TAG_VERSION) does not match mix.exs version ($MIX_VERSION)"
+          exit 1
+        fi
+    - name: Publish to Hex
+      uses: synchronal/hex-publish-action@v3
+      with:
+        name: gpt_agent
+        key: ${{ secrets.HEX_API_KEY }}
+        tag-release: false
