@@ -5,7 +5,7 @@ defmodule OpenAiClient.MixProject do
     [
       app: :open_ai_client,
       description: "OpenAI API client for Elixir",
-      version: "2.0.1",
+      version: "2.1.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),

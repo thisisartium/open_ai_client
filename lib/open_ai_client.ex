@@ -85,7 +85,7 @@ defmodule OpenAiClient do
       retry_log_level: nil,
       into: nil,
       retry: :transient,
-      receive_timeout: nil,
+      receive_timeout: default_receive_timeout(),
       base_url: default_base_url(),
       auth: {:bearer, default_api_key()}
     ])
@@ -93,6 +93,10 @@ defmodule OpenAiClient do
 
   defp remove_nil_values(options) do
     Enum.reject(options, fn {_key, value} -> value == nil end)
+  end
+
+  defp default_receive_timeout do
+    Application.get_env(:open_ai_client, :receive_timeout)
   end
 
   defp default_base_url do
