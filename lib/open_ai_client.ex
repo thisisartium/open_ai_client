@@ -4,7 +4,6 @@ defmodule OpenAiClient do
 
   This client supports all options provided by the `Req` library, as well as additional options:
   - :breaker - a circuit breaker module (default: `ExBreak`)
-  - :openai_organization - the OpenAI organization ID
   """
 
   import Req.Request, only: [put_new_header: 3]
@@ -65,15 +64,12 @@ defmodule OpenAiClient do
   end
 
   defp build_request(url, options) do
-    openai_organization = options[:openai_organization] || default_organization()
-    options = Keyword.delete(options, :openai_organization)
-
     options
     |> Keyword.put(:url, url)
     |> validate_options()
     |> remove_nil_values()
     |> Req.new()
-    |> set_headers(openai_organization: openai_organization)
+    |> set_headers()
   end
 
   defp validate_options(options) do
@@ -107,17 +103,7 @@ defmodule OpenAiClient do
     Application.get_env(:open_ai_client, :openai_api_key)
   end
 
-  defp default_organization do
-    Application.get_env(:open_ai_client, :openai_organization_id)
-  end
-
-  defp set_headers(%Req.Request{} = req, options) when is_list(options) do
-    req
-    |> put_new_header("openai-beta", "assistants=v1")
-    |> then(
-      &if options[:openai_organization],
-        do: put_new_header(&1, "openai-organization", options[:openai_organization]),
-        else: &1
-    )
+  defp set_headers(%Req.Request{} = req) do
+    put_new_header(req, "openai-beta", "assistants=v2")
   end
 end

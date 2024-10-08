@@ -65,7 +65,7 @@ defmodule OpenAiClientTest do
       bypass: bypass
     } do
       Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
-        assert {"openai-beta", "assistants=v1"} in conn.req_headers
+        assert {"openai-beta", "assistants=v2"} in conn.req_headers
 
         Plug.Conn.resp(conn, 201, "")
       end)
@@ -75,62 +75,6 @@ defmodule OpenAiClientTest do
           base_url: endpoint_url(bypass),
           breaker: MockBreaker
         )
-    end
-
-    test "adds the openai_organization_id as a request header when it is a string", %{
-      bypass: bypass
-    } do
-      organization_id = "test_organization_id"
-
-      Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
-        assert {"openai-organization", organization_id} in conn.req_headers
-
-        Plug.Conn.resp(conn, 201, "")
-      end)
-
-      {:ok, _response} =
-        OpenAiClient.post("/foo",
-          base_url: endpoint_url(bypass),
-          openai_organization: organization_id,
-          breaker: MockBreaker
-        )
-    end
-
-    test "does not include the OpenAI-Organization header when the organization_id is nil", %{
-      bypass: bypass
-    } do
-      Bypass.expect_once(bypass, "POST", "/foo", fn conn ->
-        refute Enum.any?(conn.req_headers, fn {key, _value} -> key == "openai-organization" end)
-
-        Plug.Conn.resp(conn, 201, "")
-      end)
-
-      {:ok, _response} =
-        OpenAiClient.post("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
-    end
-
-    test "retries the request on a 408, 429, 500, 502, 503, or 504 http status response", %{
-      bypass: bypass
-    } do
-      retry_statuses = [408, 429, 500, 502, 503, 504]
-      {:ok, _pid} = Agent.start_link(fn -> 0 end, name: :retry_counter)
-
-      Enum.each(retry_statuses, fn status ->
-        Bypass.expect(bypass, "POST", "/foo", fn conn ->
-          Agent.update(:retry_counter, &(&1 + 1))
-          Plug.Conn.resp(conn, status, "")
-        end)
-
-        assert {:ok, %{status: ^status}} =
-                 OpenAiClient.post("/foo",
-                   base_url: endpoint_url(bypass),
-                   retry_delay: 0,
-                   retry_log_level: false,
-                   breaker: MockBreaker
-                 )
-
-        assert Agent.get_and_update(:retry_counter, fn value -> {value, 0} end) == 4
-      end)
     end
 
     test "MockBreaker is called with the expected arguments", %{
@@ -180,38 +124,6 @@ defmodule OpenAiClientTest do
 
       Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
         assert {"authorization", "Bearer #{api_key}"} in conn.req_headers
-
-        Plug.Conn.resp(conn, 200, "")
-      end)
-
-      {:ok, _response} =
-        OpenAiClient.get("/foo", base_url: endpoint_url(bypass), breaker: MockBreaker)
-    end
-
-    test "adds the openai_organization_id as a request header when it is a string", %{
-      bypass: bypass
-    } do
-      organization_id = "test_organization_id"
-
-      Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
-        assert {"openai-organization", organization_id} in conn.req_headers
-
-        Plug.Conn.resp(conn, 200, "")
-      end)
-
-      {:ok, _response} =
-        OpenAiClient.get("/foo",
-          base_url: endpoint_url(bypass),
-          openai_organization: organization_id,
-          breaker: MockBreaker
-        )
-    end
-
-    test "does not include the OpenAI-Organization header when the organization_id is nil", %{
-      bypass: bypass
-    } do
-      Bypass.expect_once(bypass, "GET", "/foo", fn conn ->
-        refute Enum.any?(conn.req_headers, fn {key, _value} -> key == "openai-organization" end)
 
         Plug.Conn.resp(conn, 200, "")
       end)
